@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}Account Settings - ShoeStore{% endblock %}
+
+{% block content %}
+<div class="settings-container max-w-3xl mx-auto py-8">
+    <h2 class="text-2xl font-semibold mb-6">Account Settings</h2>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} mb-4">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    <form method="POST" action="{{ url_for('settings') }}" class="space-y-6">
+        {% if personal_info_set %}
+        <fieldset disabled>
+            <legend class="text-lg font-medium mb-4">Personal Information (cannot be changed)</legend>
+            <div class="form-group">
+                <label for="full_name">Full Name</label>
+                <input type="text" id="full_name" name="full_name" value="{{ user.full_name }}" class="input" disabled>
+            </div>
+            <div class="form-group">
+                <label for="gender">Gender</label>
+                <input type="text" id="gender" name="gender" value="{{ user.gender }}" class="input" disabled>
+            </div>
+        </fieldset>
+        {% else %}
+        <fieldset>
+            <legend class="text-lg font-medium mb-4">Personal Information</legend>
+            <div class="form-group">
+                <label for="full_name">Full Name</label>
+                <input type="text" id="full_name" name="full_name" value="{{ user.full_name or '' }}" class="input" required>
+            </div>
+            <div class="form-group">
+                <label for="gender">Gender</label>
+                <select id="gender" name="gender" class="input">
+                    <option value="" {% if not user.gender %}selected{% endif %}>Select Gender</option>
+                    <option value="male" {% if user.gender == 'male' %}selected{% endif %}>Male</option>
+                    <option value="female" {% if user.gender == 'female' %}selected{% endif %}>Female</option>
+                    <option value="prefer not to say" {% if user.gender == 'prefer not to say' %}selected{% endif %}>Prefer not to say</option>
+                </select>
+            </div>
+        </fieldset>
+        {% endif %}
+        <div>
+            <legend class="text-lg font-medium mb-4">Address Information</legend>
+            <div class="form-group">
+                <label for="phone">Phone</label>
+                <input type="text" id="phone" name="phone" value="{{ user.phone }}" class="input" required>
+            </div>
+            <div class="form-group">
+                <label for="address_line1">Address Line 1</label>
+                <input type="text" id="address_line1" name="address_line1" value="{{ user.address_line1 }}" class="input" required>
+            </div>
+            <div class="form-group">
+                <label for="address_line2">Address Line 2</label>
+                <input type="text" id="address_line2" name="address_line2" value="{{ user.address_line2 }}" class="input">
+            </div>
+            <div class="form-group">
+                <label for="city">City</label>
+                <input type="text" id="city" name="city" value="{{ user.city }}" class="input" required>
+            </div>
+            <div class="form-group">
+                <label for="province">Province</label>
+                <input type="text" id="province" name="province" value="{{ user.province }}" class="input" required>
+            </div>
+            <div class="form-group">
+                <label for="postal_code">Postal Code</label>
+                <input type="text" id="postal_code" name="postal_code" value="{{ user.postal_code }}" class="input" required>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Update Address</button>
+    </form>
+
+    <hr class="my-8">
+
+    <div>
+        <h3 class="text-xl font-semibold mb-4">Account Actions</h3>
+        <a href="{{ url_for('change_account') }}" class="btn btn-secondary mb-4 inline-block">Change Account</a>
+        <form method="POST" action="{{ url_for('deactivate_account') }}" onsubmit="return confirm('Are you sure you want to deactivate your account? This action cannot be undone.');" class="space-y-4 max-w-md">
+            <h4 class="font-medium">Deactivate Account</h4>
+            <div class="form-group">
+                <label for="password">Enter Password to Confirm</label>
+                <input type="password" id="password" name="password" class="input" required>
+            </div>
+            <button type="submit" class="btn btn-danger">Deactivate Account</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

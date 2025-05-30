@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}{{ product.name }} - ShoeStore{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="product-detail grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div class="product-detail-left">
+            <img id="mainImage" src="{{ product.variations[0].image_url }}" alt="{{ product.name }}" class="product-detail-image w-full rounded-lg shadow-lg">
+        </div>
+        
+        <div class="product-detail-info">
+            <nav class="product-breadcrumb text-sm mb-4">
+                <a href="{{ url_for('products') }}" class="text-blue-500 hover:text-blue-600">Products</a> > 
+                <span class="text-gray-600">{{ product.name }}</span>
+            </nav>
+            
+            <h1 class="product-title text-3xl font-bold mb-2">{{ product.name }}</h1>
+            <p class="product-brand text-gray-600 mb-4">{{ product.brand }}</p>
+            
+            <div class="price-display text-2xl font-bold mb-6">
+                <span class="peso-sign">₱</span>
+                <span id="currentPrice">{{ "%.2f"|format(product.base_price) }}</span>
+            </div>
+            
+            <div class="product-description text-gray-700 mb-8">
+                <p>{{ product.description }}</p>
+            </div>
+            
+            <div class="variation-section mb-8">
+                <h3 class="variation-title text-lg font-semibold mb-3">Select Size</h3>
+                <div class="size-options flex flex-wrap gap-2" id="sizeOptions">
+                    {% for variation in product.variations|unique(attribute='size') %}
+                    <button class="option-button size-button" data-size="{{ variation.size }}">
+                        {{ variation.size }}
+                    </button>
+                    {% endfor %}
+                </div>
+                
+                <h3 class="variation-title text-lg font-semibold mt-6 mb-3">Select Color</h3>
+                <div class="color-options flex flex-wrap gap-2" id="colorOptions">
+                    {% set seen_colors = [] %}
+                    {% for variation in product.variations %}
+                        {% if variation.color not in seen_colors %}
+                            {% set _ = seen_colors.append(variation.color) %}
+                            <button class="option-button color-button" data-color="{{ variation.color }}">
+                                {{ variation.color }}
+                            </button>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div class="stock-status text-gray-600 mb-4" id="stockStatus">Please select size and color</div>
+            
+            <div class="quantity-wrapper mb-6">
+                <label for="quantity" class="block text-gray-700 mb-2">Quantity:</label>
+                <input type="number" id="quantity" name="quantity" min="1" value="1" class="quantity-input w-24 px-3 py-2 border rounded">
+            </div>
+            
+            <div class="flex gap-4">
+                <button id="addToCart" class="btn btn-primary flex-1" disabled>
+                    <i class="fas fa-shopping-cart mr-2"></i>Add to Cart
+                </button>
+                <button id="buyNow" class="btn flex-1" style="background-color: var(--secondary-color);" disabled>
+                    <i class="fas fa-bolt mr-2"></i>Buy Now
+                </button>
+            </div>
+            
+            <div class="product-details-tabs mt-12">
+                <div class="tabs flex border-b">
+                    <button class="tab-button active px-6 py-3 border-b-2 border-blue-500" data-tab="sizing">Sizing Guide</button>
+                    <button class="tab-button px-6 py-3" data-tab="shipping">Shipping</button>
+                    <button class="tab-button px-6 py-3" data-tab="returns">Returns</button>
+                </div>
+                
+                <div class="tab-content p-4" id="sizingContent">
+                    <h4 class="text-lg font-semibold mb-4">Size Guide</h4>
+                    <table class="size-guide w-full">
+                        <tr class="bg-gray-100">
+                            <th class="px-4 py-2">EU Size</th>
+                            <th class="px-4 py-2">US Size</th>
+                            <th class="px-4 py-2">Foot Length (cm)</th>
+                        </tr>
+                        <tr>
+                            <td class="border px-4 py-2">39</td>
+                            <td class="border px-4 py-2">6.5</td>
+                            <td class="border px-4 py-2">24.5</td>
+                        </tr>
+                        <tr>
+                            <td class="border px-4 py-2">40</td>
+                            <td class="border px-4 py-2">7</td>
+                            <td class="border px-4 py-2">25</td>
+                        </tr>
+                        <tr>
+                            <td class="border px-4 py-2">41</td>
+                            <td class="border px-4 py-2">8</td>
+                            <td class="border px-4 py-2">25.5</td>
+                        </tr>
+                        <tr>
+                            <td class="border px-4 py-2">42</td>
+                            <td class="border px-4 py-2">8.5</td>
+                            <td class="border px-4 py-2">26</td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <div class="tab-content hidden p-4" id="shippingContent">
+                    <h4 class="text-lg font-semibold mb-4">Shipping Information</h4>
+                    <p class="mb-2">Free shipping on orders over ₱3,000</p>
+                    <p class="mb-2">Delivery within Metro Manila: 2-3 business days</p>
+                    <p>Provincial delivery: 3-5 business days</p>
+                </div>
+                
+                <div class="tab-content hidden p-4" id="returnsContent">
+                    <h4 class="text-lg font-semibold mb-4">Returns Policy</h4>
+                    <p class="mb-2">30-day return policy for unworn items</p>
+                    <p class="mb-2">Free returns within Metro Manila</p>
+                    <p>Items must be in original packaging</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+#buyNow {
+    background-color: var(--secondary-color);
+    color: white;
+}
+
+#buyNow:hover:not(:disabled) {
+    background-color: #27ae60;
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script id="productData" type="application/json">{{ product.to_dict()|tojson|safe }}</script>
+<script src="{{ url_for('static', filename='js/product.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const productData = JSON.parse(document.getElementById('productData').textContent);
+    initializeProductDetail(productData);
+});
+</script>
+{% endblock %}

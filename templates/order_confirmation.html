@@ -1,0 +1,345 @@
+{% extends "base.html" %}
+
+{% block title %}Order Confirmation - ShoeStore{% endblock %}
+
+{% block content %}
+<div class="confirmation-container">
+    <div class="confirmation-box">
+        <div class="success-icon">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        
+        <h2>Thank You for Your Order!</h2>
+        <p class="order-number">Order #{{ order.id }}</p>
+        
+        {% if order.payment_method in ['gcash', 'maya'] and order.payment_status == 'completed' %}
+            <div class="status-message success">
+                <i class="fas fa-check"></i>
+                Payment Received
+            </div>
+        {% elif order.payment_method == 'cod' %}
+            <div class="status-message info">
+                <i class="fas fa-info-circle"></i>
+                Cash on Delivery
+            </div>
+        {% endif %}
+
+        <div class="order-details">
+            <h3>Order Details</h3>
+            <div class="details-grid">
+                <div class="detail-group">
+                    <h4>Shipping Address</h4>
+                    <p>{{ order.full_name }}</p>
+                    <p>{{ order.phone }}</p>
+                    <p>{{ order.address_line1 }}</p>
+                    {% if order.address_line2 %}
+                        <p>{{ order.address_line2 }}</p>
+                    {% endif %}
+                    <p>{{ order.city }}, {{ order.province }}</p>
+                    <p>{{ order.postal_code }}</p>
+                </div>
+
+                <div class="detail-group">
+                    <h4>Payment Method</h4>
+                    <p class="payment-method">
+                        {% if order.payment_method == 'gcash' %}
+                            <i class="fas fa-mobile-alt"></i> GCash
+                        {% elif order.payment_method == 'maya' %}
+                            <i class="fas fa-wallet"></i> Maya
+                        {% else %}
+                            <i class="fas fa-money-bill-wave"></i> Cash on Delivery
+                        {% endif %}
+                    </p>
+                    {% if order.payment_reference %}
+                        <p class="reference">Ref: {{ order.payment_reference }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="order-items">
+                <h4>Items Ordered</h4>
+                {% for item in order.items %}
+                <div class="order-item">
+                    <div class="item-details">
+                        <h5>{{ item.variation.product.name }}</h5>
+                        <p>Size: {{ item.variation.size }} | Color: {{ item.variation.color }}</p>
+                        <p>Quantity: {{ item.quantity }}</p>
+                    </div>
+                    <div class="item-price">
+                        ₱{{ "%.2f"|format(item.price * item.quantity) }}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="order-summary">
+                <div class="summary-row">
+                    <span>Subtotal:</span>
+                    <span>₱{{ "%.2f"|format(order.total_amount - order.shipping_fee) }}</span>
+                </div>
+                <div class="summary-row">
+                    <span>Shipping Fee:</span>
+                    <span>₱{{ "%.2f"|format(order.shipping_fee) }}</span>
+                </div>
+                <div class="summary-row total">
+                    <span>Total:</span>
+                    <span>₱{{ "%.2f"|format(order.total_amount) }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="confirmation-actions">
+            <button id="saveInfo" class="btn btn-secondary">
+                <i class="fas fa-save"></i> Save Shipping Information
+            </button>
+            <a href="{{ url_for('products') }}" class="btn btn-primary">
+                Continue Shopping
+            </a>
+        </div>
+
+        <script>
+        document.getElementById('saveInfo').addEventListener('click', function() {
+            fetch('/user/save-info', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    full_name: '{{ order.full_name }}',
+                    phone: '{{ order.phone }}',
+                    address_line1: '{{ order.address_line1 }}',
+                    address_line2: '{{ order.address_line2 }}',
+                    city: '{{ order.city }}',
+                    province: '{{ order.province }}',
+                    postal_code: '{{ order.postal_code }}'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Shipping information saved successfully!');
+                    this.disabled = true;
+                    this.innerHTML = '<i class="fas fa-check"></i> Information Saved';
+                } else {
+                    alert('Failed to save information: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while saving information');
+            });
+        });
+        </script>
+
+        <div class="support-info">
+            <p>Need help? Contact our support:</p>
+            <p>Email: support@shoestore.ph</p>
+            <p>Phone: (02) 8123-4567</p>
+        </div>
+    </div>
+</div>
+
+<style>
+.confirmation-container {
+    min-height: calc(100vh - 200px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background-color: #f8fafc;
+}
+
+.confirmation-box {
+    background: white;
+    padding: 3rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+    width: 100%;
+    max-width: 800px;
+    text-align: center;
+}
+
+.success-icon {
+    font-size: 4rem;
+    color: #22c55e;
+    margin-bottom: 1.5rem;
+}
+
+.order-number {
+    font-size: 1.25rem;
+    color: #64748b;
+    margin: 1rem 0;
+}
+
+.status-message {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 50px;
+    margin: 1rem 0;
+    font-weight: 500;
+}
+
+.status-message.success {
+    background-color: #dcfce7;
+    color: #166534;
+}
+
+.status-message.info {
+    background-color: #dbeafe;
+    color: #1e40af;
+}
+
+.order-details {
+    margin: 3rem 0;
+    text-align: left;
+}
+
+.details-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin: 1.5rem 0;
+}
+
+.detail-group {
+    padding: 1.5rem;
+    background: #f8fafc;
+    border-radius: 8px;
+}
+
+.detail-group h4 {
+    margin-bottom: 1rem;
+    color: #0f172a;
+}
+
+.detail-group p {
+    margin: 0.5rem 0;
+    color: #334155;
+}
+
+.payment-method {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+}
+
+.reference {
+    font-family: monospace;
+    background: #e2e8f0;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    display: inline-block;
+    margin-top: 0.5rem;
+}
+
+.order-items {
+    margin: 2rem 0;
+}
+
+.order-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.item-details h5 {
+    margin: 0 0 0.5rem 0;
+    color: #0f172a;
+}
+
+.item-details p {
+    margin: 0.25rem 0;
+    color: #64748b;
+}
+
+.item-price {
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.order-summary {
+    margin: 2rem 0;
+    padding: 1.5rem;
+    background: #f8fafc;
+    border-radius: 8px;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    margin: 0.5rem 0;
+    color: #334155;
+}
+
+.summary-row.total {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 2px solid #e2e8f0;
+    font-weight: 600;
+    font-size: 1.25rem;
+    color: var(--primary-color);
+}
+
+.confirmation-actions {
+    margin: 2rem 0;
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.btn-secondary {
+    background: #64748b;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-secondary:hover {
+    background: #475569;
+    transform: translateY(-2px);
+}
+
+.btn-secondary:disabled {
+    background: #94a3b8;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-secondary i {
+    font-size: 1rem;
+}
+
+.support-info {
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid #e2e8f0;
+    color: #64748b;
+}
+
+.support-info p {
+    margin: 0.5rem 0;
+}
+
+@media (max-width: 768px) {
+    .details-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .confirmation-box {
+        padding: 2rem;
+    }
+}
+</style>
+{% endblock %}

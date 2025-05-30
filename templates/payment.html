@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+
+{% block title %}Payment - ShoeStore{% endblock %}
+
+{% block content %}
+<div class="payment-container">
+    <div class="payment-box">
+        <h2>Complete Your Payment</h2>
+        <div class="order-info">
+            <p>Order #{{ order.id }}</p>
+            <p class="amount">₱{{ "%.2f"|format(order.total_amount) }}</p>
+        </div>
+
+        {% if order.payment_method == 'gcash' %}
+        <div class="payment-instructions">
+            <h3>GCash Payment Instructions</h3>
+            <div class="qr-section">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=sample_gcash_qr" alt="GCash QR Code" class="qr-code">
+                <p>Scan QR code using GCash app</p>
+            </div>
+            <div class="manual-section">
+                <h4>Or send payment to:</h4>
+                <div class="account-details">
+                    <p>Account Name: ShoeStore PH</p>
+                    <p>GCash Number: 0917-123-4567</p>
+                </div>
+            </div>
+        </div>
+        {% elif order.payment_method == 'maya' %}
+        <div class="payment-instructions">
+            <h3>Maya Payment Instructions</h3>
+            <div class="qr-section">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=sample_maya_qr" alt="Maya QR Code" class="qr-code">
+                <p>Scan QR code using Maya app</p>
+            </div>
+            <div class="manual-section">
+                <h4>Or send payment to:</h4>
+                <div class="account-details">
+                    <p>Account Name: ShoeStore PH</p>
+                    <p>Maya Number: 0917-123-4567</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <form id="payment-form" class="payment-form">
+            <div class="form-group">
+                <label for="reference">Reference Number</label>
+                <input type="text" id="reference" name="reference" required 
+                       placeholder="Enter your payment reference number"
+                       class="form-input">
+                <small>Please enter the reference number from your {{ order.payment_method }} payment</small>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-large">
+                Confirm Payment
+            </button>
+        </form>
+
+        <div class="payment-footer">
+            <p>Having trouble? Contact our support:</p>
+            <p>Email: support@shoestore.ph</p>
+            <p>Phone: (02) 8123-4567</p>
+        </div>
+    </div>
+</div>
+
+<style>
+.payment-container {
+    min-height: calc(100vh - 200px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background-color: #f8fafc;
+}
+
+.payment-box {
+    background: white;
+    padding: 2.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+    width: 100%;
+    max-width: 500px;
+    text-align: center;
+}
+
+.order-info {
+    margin: 1.5rem 0;
+    padding: 1rem;
+    background: #f8fafc;
+    border-radius: 8px;
+}
+
+.amount {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin: 0.5rem 0;
+}
+
+.payment-instructions {
+    margin: 2rem 0;
+    padding: 1.5rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+}
+
+.qr-section {
+    margin: 1.5rem 0;
+}
+
+.qr-code {
+    width: 200px;
+    height: 200px;
+    margin: 1rem auto;
+    display: block;
+}
+
+.manual-section {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+.account-details {
+    background: #f8fafc;
+    padding: 1rem;
+    border-radius: 6px;
+    margin: 1rem 0;
+}
+
+.account-details p {
+    margin: 0.5rem 0;
+    font-family: monospace;
+    font-size: 1.1rem;
+}
+
+.payment-form {
+    margin: 2rem 0;
+    text-align: left;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.form-group small {
+    display: block;
+    margin-top: 0.5rem;
+    color: #64748b;
+}
+
+.form-input {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+}
+
+.form-input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.btn-large {
+    width: 100%;
+    padding: 1rem;
+    font-size: 1.125rem;
+    font-weight: 600;
+}
+
+.payment-footer {
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid #e5e7eb;
+    color: #64748b;
+}
+
+.payment-footer p {
+    margin: 0.5rem 0;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const paymentForm = document.getElementById('payment-form');
+    
+    paymentForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const reference = document.getElementById('reference').value;
+        
+        fetch('/payment/{{ order.id }}/confirm', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                reference: reference
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = '/order/confirmation/' + '{{ order.id }}';
+            } else {
+                alert(data.message || 'An error occurred. Please try again.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+        });
+    });
+});
+</script>
+{% endblock %}

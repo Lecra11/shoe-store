@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}Our Collection - ShoeStore{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="section-title">Our Collection</h1>
+    
+    <div class="filters">
+        <select id="sizeFilter" class="filter-select">
+            <option value="">Size</option>
+            <option value="39">39 (US 6.5)</option>
+            <option value="40">40 (US 7)</option>
+            <option value="41">41 (US 8)</option>
+            <option value="42">42 (US 8.5)</option>
+        </select>
+        
+        <select id="colorFilter" class="filter-select">
+            <option value="">Color</option>
+            <option value="Black">Black</option>
+            <option value="Red">Red</option>
+            <option value="Blue">Blue</option>
+        </select>
+        
+        <select id="priceFilter" class="filter-select">
+            <option value="">Price Range</option>
+            <option value="0-2000">Under ₱2,000</option>
+            <option value="2000-3000">₱2,000 - ₱3,000</option>
+            <option value="3000-5000">₱3,000 - ₱5,000</option>
+            <option value="5000+">Over ₱5,000</option>
+        </select>
+    </div>
+
+    <div class="products-grid">
+        {% for product in products %}
+        <div class="product-card">
+            <a href="{{ url_for('product_detail', product_id=product.id) }}" class="product-link">
+                <div class="product-image-container">
+                    <img src="{{ product.variations[0].image_url }}" alt="{{ product.name }}" class="product-image">
+                    {% if product.variations|length > 1 %}
+                    <span class="variations-badge">{{ product.variations|length }} variations</span>
+                    {% endif %}
+                </div>
+                <div class="product-info">
+                    <h3 class="product-name">{{ product.name }}</h3>
+                    <p class="product-brand">{{ product.brand }}</p>
+                    
+                    <div class="product-colors">
+                        {% for variation in product.variations[:4]|unique(attribute='color') %}
+<span class="color-dot" style="background-color: '{{ variation.color | lower }}';" title="{{ variation.color }}"></span>
+                    {% endfor %}
+                    {% if product.variations|length > 4 %}
+                    <span class="color-dot more">+{{ product.variations|length - 4 }}</span>
+                    {% endif %}
+                </div>
+                
+                <div class="product-sizes">
+                    <small>Available sizes:</small>
+                    <div class="size-dots">
+                        {% for variation in product.variations[:3]|unique(attribute='size') %}
+                        <span class="size-dot">{{ variation.size }}</span>
+                        {% endfor %}
+                        {% if product.variations|length > 3 %}
+                        <span class="size-dot more">+{{ product.variations|length - 3 }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                    
+                    <p class="product-price">
+                        <span class="peso-sign">₱</span>
+                        {{ "%.2f"|format(product.base_price) }}
+                    </p>
+                    
+                    <button class="view-details-btn">View Details</button>
+                </div>
+            </a>
+        </div>
+        {% else %}
+        <div class="no-products">
+            <p>No products found matching your criteria.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const filters = document.querySelectorAll('.filter-select');
+    
+    filters.forEach(filter => {
+        filter.addEventListener('change', function() {
+            // In a real application, this would trigger a server request
+            // For now, we'll just log the selected filters
+            const selectedFilters = {
+                size: document.getElementById('sizeFilter').value,
+                color: document.getElementById('colorFilter').value,
+                price: document.getElementById('priceFilter').value
+            };
+            console.log('Selected filters:', selectedFilters);
+        });
+    });
+});
+</script>
+{% endblock %}

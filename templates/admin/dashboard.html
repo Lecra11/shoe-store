@@ -1,0 +1,992 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - ShoeStore{% endblock %}
+
+{% block content %}
+<style>
+.admin-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.admin-header {
+    margin-bottom: 2rem;
+}
+
+.admin-header h2 {
+    color: #2d3748;
+    font-size: 1.8rem;
+    margin-bottom: 1.5rem;
+}
+
+.admin-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+.stat-card i {
+    font-size: 2rem;
+    color: #4299e1;
+    margin-bottom: 1rem;
+}
+
+.stat-card h3 {
+    color: #4a5568;
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.stat-card p {
+    color: #2d3748;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0);
+    z-index: 1000;
+    transition: background-color 0.3s ease;
+}
+
+.modal.show {
+    display: block;
+    background: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+    position: relative;
+    background: white;
+    margin: 2rem auto;
+    padding: 2rem;
+    width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: all 0.3s ease;
+}
+
+.modal.show .modal-content {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.close {
+    position: absolute;
+    right: 1.5rem;
+    top: 1rem;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #4a5568;
+}
+
+.close:hover {
+    color: #2d3748;
+}
+
+.details-section {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.details-section h4 {
+    color: #2d3748;
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.info-item label {
+    color: #4a5568;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.info-item span {
+    color: #1a202c;
+    font-size: 1rem;
+}
+
+.order-item {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    overflow: hidden;
+}
+
+.order-header {
+    background: #f7fafc;
+    padding: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.order-status {
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+}
+
+.order-status.pending { background: #fff3cd; color: #856404; }
+.order-status.paid { background: #d4edda; color: #155724; }
+.order-status.shipped { background: #cce5ff; color: #004085; }
+.order-status.delivered { background: #d1e7dd; color: #0f5132; }
+.order-status.complete, .order-status.received { background: #d4edda; color: #155724; }
+.order-status.refund { background: #f8d7da; color: #721c24; }
+.order-status.cancelled { background: #f8d7da; color: #721c24; }
+
+.order-items {
+    padding: 1rem;
+}
+
+.order-product {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: 1rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.order-product:last-child {
+    border-bottom: none;
+}
+
+.cart-item {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: 1rem;
+    padding: 1rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.cart-item:last-child {
+    border-bottom: none;
+}
+
+.admin-section {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.admin-section h3 {
+    color: #2d3748;
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1rem;
+}
+
+.admin-table th,
+.admin-table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.admin-table th {
+    background: #f7fafc;
+    color: #4a5568;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.admin-table tr:hover {
+    background: #f8fafc;
+}
+
+.stock-status {
+    font-weight: bold;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+}
+
+.stock-green {
+    color: #2f855a !important;
+    background-color: #c6f6d5 !important;
+}
+
+.stock-orange {
+    color: #dd6b20;
+    background-color: #fbd38d;
+}
+
+.stock-red {
+    color: #c53030;
+    background-color: #fed7d7;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-sm {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+}
+
+.btn-info {
+    background: #4299e1;
+    color: white;
+    border: none;
+}
+
+.btn-info:hover {
+    background: #3182ce;
+}
+
+.info-badge {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 0.5rem;
+    padding: 0.25rem;
+    border-radius: 9999px;
+    background: #edf2f7;
+    color: #4a5568;
+    cursor: help;
+}
+
+.info-badge i {
+    font-size: 0.875rem;
+}
+
+.loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+    text-align: center;
+    color: #4a5568;
+}
+
+.loading-state i {
+    font-size: 2rem;
+    color: #4299e1;
+    margin-bottom: 1rem;
+}
+
+.loading-state p {
+    font-size: 1rem;
+}
+
+.error-state {
+    background: #fff5f5;
+    border: 1px solid #feb2b2;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin: 1rem 0;
+    color: #c53030;
+    text-align: center;
+}
+
+.error-state i {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
+
+.error-state p {
+    margin: 0;
+    font-size: 1rem;
+}
+</style>
+<div class="admin-container">
+    <div class="admin-header">
+        <h2>Admin Dashboard</h2>
+        <div class="admin-stats">
+            <div class="stat-card">
+                <i class="fas fa-users"></i>
+                <h3>Total Customers</h3>
+                <p>{{ users|length }}</p>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-shopping-bag"></i>
+                <h3>Total Products</h3>
+                <p>{{ products|length }}</p>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-money-bill-wave"></i>
+                <h3>Total Sales</h3>
+                <p>₱{{ "%.2f"|format(total_sales) }}</p>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-box"></i>
+                <h3>Products Sold</h3>
+                <p>{{ total_sold }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="admin-section">
+        <h3>Customer List</h3>
+        <div class="table-responsive">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Join Date</th>
+                        <th>Cart Items</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td>{{ user.id }}</td>
+                        <td>{{ user.username }}</td>
+                        <td>{{ user.email }}</td>
+                        <td>{{ user.created_at.strftime('%Y-%m-%d') if user.created_at else 'N/A' }}</td>
+                        <td>{{ user.cart_items|length }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-info view-details" data-user-id="{{ user.id }}">
+                                <i class="fas fa-eye"></i> View Details
+                            </button>
+                            {% if user.shipping_info_updated_at %}
+                            <span class="info-badge" title="Shipping info last updated: {{ user.shipping_info_updated_at.strftime('%Y-%m-%d %H:%M') }}">
+                                <i class="fas fa-map-marker-alt"></i>
+                            </span>
+                            {% endif %}
+                            {% if user.last_login %}
+                            <span class="info-badge" title="Last login: {{ user.last_login.strftime('%Y-%m-%d %H:%M') }}">
+                                <i class="fas fa-clock"></i>
+                            </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- User Details Modal -->
+<div id="userModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h3>Customer Details</h3>
+<div id="userDetails" class="user-details">
+    <div class="details-section">
+        <h4>Personal Information</h4>
+        <div class="info-grid">
+            <div class="info-item">
+                <label>Full Name:</label>
+                <span id="userFullName"></span>
+            </div>
+            <div class="info-item">
+                <label>Email:</label>
+                <span id="userEmail"></span>
+            </div>
+            <div class="info-item">
+                <label>Phone:</label>
+                <span id="userPhone"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="details-section">
+        <h4>Address</h4>
+        <div class="info-grid">
+            <div class="info-item">
+                <label>Address Line 1:</label>
+                <span id="userAddress1"></span>
+            </div>
+            <div class="info-item">
+                <label>Address Line 2:</label>
+                <span id="userAddress2"></span>
+            </div>
+            <div class="info-item">
+                <label>City:</label>
+                <span id="userCity"></span>
+            </div>
+            <div class="info-item">
+                <label>Province:</label>
+                <span id="userProvince"></span>
+            </div>
+            <div class="info-item">
+                <label>Postal Code:</label>
+                <span id="userPostal"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="details-section">
+        <h4>Orders</h4>
+<div id="userOrders" class="orders-list">
+    <!-- Orders will be loaded here -->
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add event delegation for order status update buttons inside userOrders container
+    const userOrdersContainer = document.getElementById('userOrders');
+
+    function updateOrderStatus(orderId, status) {
+        fetch(`/order/${orderId}/update_status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ status: status })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Order status updated to ' + data.new_status);
+                // Refresh user details modal by re-fetching user data
+                const userId = document.querySelector('.view-details[data-user-id]').dataset.userId;
+                console.log('Fetching user details for userId:', userId);
+                fetch(`/admin/user/${userId}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        console.log('User details response:', data);
+                        if (data.success) {
+                            // Update orders HTML
+                            const ordersHtml = data.orders && data.orders.length ? data.orders.map(order => {
+                                console.log('Rendering order:', order);
+                                return `
+                                <div class="order-item">
+<div class="order-header">
+    <span class="order-id">Order #${order.id || 'N/A'}</span>
+    <span class="order-date">${order.date || 'N/A'}</span>
+    <span class="order-status ${order.status || ''}">${order.status || 'N/A'}</span>
+    <span class="order-total">₱${(order.total_amount || 0).toFixed(2)}</span>
+</div>
+<div class="order-items">
+    ${(order.items || []).map(item => `
+        <div class="order-product">
+            <span>${item.product_name || 'N/A'}</span>
+            <span>${item.size || 'N/A'} / ${item.color || 'N/A'}</span>
+            <span>x${item.quantity || 0}</span>
+            <span>₱${(item.price || 0).toFixed(2)}</span>
+        </div>
+    `).join('')}
+</div>
+${order.cancel_refund_reason ? `<p><strong>Reason:</strong> ${order.cancel_refund_reason}</p>` : ''}
+    <div class="order-actions">
+        <button class="btn btn-sm btn-warning btn-cancel" data-order-id="${order.id}">Cancel</button>
+        <button class="btn btn-sm btn-danger btn-refund" data-order-id="${order.id}">Refund</button>
+        <button class="btn btn-sm btn-success btn-complete" data-order-id="${order.id}">Complete</button>
+    </div>
+                                </div>
+                            `}).join('') : '<p>No orders yet</p>';
+                            userOrdersContainer.innerHTML = ordersHtml;
+                            attachButtonListeners();
+                        }
+                    });
+            } else {
+                alert('Failed to update order status: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while updating order status');
+        });
+    }
+
+    function attachButtonListeners() {
+        userOrdersContainer.querySelectorAll('.btn-cancel').forEach(button => {
+            button.addEventListener('click', () => {
+                if (confirm('Are you sure you want to cancel this order?')) {
+                    updateOrderStatus(button.dataset.orderId, 'cancelled');
+                }
+            });
+        });
+
+        userOrdersContainer.querySelectorAll('.btn-refund').forEach(button => {
+            button.addEventListener('click', () => {
+                if (confirm('Are you sure you want to refund this order?')) {
+                    updateOrderStatus(button.dataset.orderId, 'refund');
+                }
+            });
+        });
+
+        userOrdersContainer.querySelectorAll('.btn-complete').forEach(button => {
+            button.addEventListener('click', () => {
+                if (confirm('Mark this order as complete?')) {
+                    updateOrderStatus(button.dataset.orderId, 'complete');
+                }
+            });
+        });
+    }
+
+    attachButtonListeners();
+
+    // Add listeners for new status buttons
+    userOrdersContainer.querySelectorAll('.btn-on-the-road').forEach(button => {
+        button.addEventListener('click', () => {
+            if (confirm('Mark this order as "On The Road"?')) {
+                updateOrderStatus(button.dataset.orderId, 'on the road');
+            }
+        });
+    });
+
+    userOrdersContainer.querySelectorAll('.btn-out-of-delivery').forEach(button => {
+        button.addEventListener('click', () => {
+            if (confirm('Mark this order as "Out Of Delivery"?')) {
+                updateOrderStatus(button.dataset.orderId, 'out of delivery');
+            }
+        });
+    });
+});
+</script>
+    </div>
+
+    <div class="details-section">
+        <h4>Cart Items</h4>
+        <div id="userCart" class="cart-list">
+            <!-- Cart items will be loaded here -->
+        </div>
+    </div>
+</div>
+    </div>
+</div>
+
+<div class="admin-section">
+    <h3>Product List</h3>
+    <button id="addProductBtn" class="btn btn-info" style="margin-bottom: 1rem;">Add New Product</button>
+    <div class="table-responsive">
+        <table class="admin-table" id="productTable">
+            <thead>
+                <tr>
+                    <th>Product Name</th>
+                    <th>Variation</th>
+                    <th>Price</th>
+                    <th>Quantity</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in products %}
+                    {% for variation in product.variations %}
+                    <tr data-variation-id="{{ variation.id }}">
+                        <td>{{ product.name }}</td>
+                        <td>{{ variation.size }} / {{ variation.color }}</td>
+                        <td>₱{{ "%.2f"|format(variation.price) }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-info qty-decrease">-</button>
+                            <input type="number" class="qty-input" value="{{ variation.stock }}" min="0" style="width: 60px; text-align: center;" />
+                            <button class="btn btn-sm btn-info qty-increase">+</button>
+                        </td>
+                        <td>
+                            {% if variation.stock == 0 %}
+                                <span class="stock-status stock-red">Out of Stock</span>
+                            {% elif variation.stock < 15 %}
+                                <span class="stock-status stock-orange">Running Out</span>
+                            {% else %}
+                                <span class="stock-status stock-green">In Stock</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const addProductBtn = document.getElementById('addProductBtn');
+    addProductBtn.addEventListener('click', function() {
+        alert('This is under maintenance.');
+    });
+
+    const productTable = document.getElementById('productTable');
+
+    productTable.addEventListener('click', function(event) {
+        const target = event.target;
+        if (target.classList.contains('qty-increase') || target.classList.contains('qty-decrease')) {
+            const row = target.closest('tr');
+            const input = row.querySelector('.qty-input');
+            let currentValue = parseInt(input.value) || 0;
+
+            if (target.classList.contains('qty-increase')) {
+                currentValue++;
+            } else if (target.classList.contains('qty-decrease')) {
+                if (currentValue > 0) {
+                    currentValue--;
+                }
+            }
+
+            input.value = currentValue;
+            updateStock(row.dataset.variationId, currentValue, row);
+        }
+    });
+
+    productTable.querySelectorAll('.qty-input').forEach(input => {
+        input.addEventListener('change', function() {
+            let value = parseInt(this.value);
+            if (isNaN(value) || value < 0) {
+                value = 0;
+                this.value = value;
+            }
+            const row = this.closest('tr');
+            updateStock(row.dataset.variationId, value, row);
+        });
+    });
+
+    function updateStock(variationId, stock, row) {
+        fetch(`/admin/product_variation/${variationId}/update_stock`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ stock: stock })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const statusCell = row.querySelector('td:last-child');
+                if (stock < 5) {
+                    statusCell.innerHTML = '<span style="color: red; font-weight: bold;">Running Out</span>';
+                } else {
+                    statusCell.innerHTML = '<span>In Stock</span>';
+                }
+            } else {
+                alert('Failed to update stock: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('Error updating stock: ' + error);
+        });
+    }
+});
+</script>
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('userModal');
+    const closeBtn = document.getElementsByClassName('close')[0];
+    
+    // Function to reset modal content
+    function resetModal() {
+        const userDetails = document.getElementById('userDetails');
+        if (!userDetails) return;
+
+        // Remove any dynamically added sections
+        const accountInfo = document.querySelector('.details-section[data-section="account-info"]');
+        if (accountInfo) {
+            accountInfo.remove();
+        }
+
+        // Reset the main content
+        userDetails.innerHTML = `
+            <div class="details-section">
+                <h4>Personal Information</h4>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <label>Full Name:</label>
+                        <span id="userFullName">-</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Email:</label>
+                        <span id="userEmail">-</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Phone:</label>
+                        <span id="userPhone">-</span>
+                    </div>
+                </div>
+            </div>
+            <div class="details-section">
+                <h4>Address</h4>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <label>Address Line 1:</label>
+                        <span id="userAddress1">-</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Address Line 2:</label>
+                        <span id="userAddress2">-</span>
+                    </div>
+                    <div class="info-item">
+                        <label>City:</label>
+                        <span id="userCity">-</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Province:</label>
+                        <span id="userProvince">-</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Postal Code:</label>
+                        <span id="userPostal">-</span>
+                    </div>
+                </div>
+            </div>
+            <div class="details-section">
+                <h4>Orders</h4>
+                <div id="userOrders" class="orders-list">
+                    <!-- Orders will be loaded here -->
+                </div>
+            </div>
+            <div class="details-section">
+                <h4>Cart Items</h4>
+                <div id="userCart" class="cart-list">
+                    <!-- Cart items will be loaded here -->
+                </div>
+            </div>
+        `;
+    }
+
+    // Function to toggle body scroll
+    function toggleBodyScroll(disable) {
+        document.body.style.overflow = disable ? 'hidden' : '';
+    }
+
+    // Function to close modal with animation
+    function closeModal() {
+        modal.classList.remove('show');
+        toggleBodyScroll(false);
+        setTimeout(() => {
+            modal.style.display = "none";
+            resetModal();
+        }, 300); // Match the transition duration
+    }
+
+    // Function to open modal with animation
+    function openModal() {
+        modal.style.display = "block";
+        // Force a reflow to ensure the display change takes effect
+        modal.offsetHeight;
+        modal.classList.add('show');
+        toggleBodyScroll(true);
+    }
+
+    // Close modal when clicking the X
+    closeBtn.onclick = closeModal;
+    
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            closeModal();
+        }
+    }
+    
+    // Close modal on escape key
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape' && modal.style.display === "block") {
+            closeModal();
+        }
+    });
+    
+    // View user details
+    document.querySelectorAll('.view-details').forEach(button => {
+        button.addEventListener('click', async function() {
+            const userId = this.dataset.userId;
+            openModal();
+            
+            // Show loading state
+            document.getElementById('userDetails').innerHTML = `
+                <div class="loading-state">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading user details...</p>
+                </div>
+            `;
+            
+            try {
+                // Fetch user details
+                const response = await fetch(`/admin/user/${userId}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error(data.error || 'Failed to load user details');
+                }
+                
+                if (data.user) {
+                    // Reset modal content before updating with new data
+                    resetModal();
+                    
+                    const userDetails = document.getElementById('userDetails');
+                    if (!userDetails) {
+                        throw new Error('User details container not found');
+                    }
+
+                    // Helper function to safely update element text content
+                    const updateElement = (id, value) => {
+                        const element = document.getElementById(id);
+                        if (element) {
+                            element.textContent = value || 'N/A';
+                        }
+                    };
+
+                    // Update personal info
+                    updateElement('userFullName', data.user.full_name);
+                    updateElement('userEmail', data.user.email);
+                    updateElement('userPhone', data.user.phone);
+                    
+                    // Update address
+                    updateElement('userAddress1', data.user.address_line1);
+                    updateElement('userAddress2', data.user.address_line2);
+                    updateElement('userCity', data.user.city);
+                    updateElement('userProvince', data.user.province);
+                    updateElement('userPostal', data.user.postal_code);
+                    
+                    // Add timestamps if available
+                    const createdAt = data.user.created_at ? new Date(data.user.created_at).toLocaleString() : 'N/A';
+                    const lastLogin = data.user.last_login ? new Date(data.user.last_login).toLocaleString() : 'N/A';
+                    
+                    // Add additional info to the modal
+                    const additionalInfo = document.createElement('div');
+                    additionalInfo.className = 'details-section';
+                    additionalInfo.innerHTML = `
+                        <h4>Account Information</h4>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label>Account Created:</label>
+                                <span>${createdAt}</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Last Login:</label>
+                                <span>${lastLogin}</span>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Remove existing account information section if it exists
+                    const existingAccountInfo = document.querySelector('.details-section[data-section="account-info"]');
+                    if (existingAccountInfo) {
+                        existingAccountInfo.remove();
+                    }
+
+                    // Add data attribute to identify this section
+                    additionalInfo.setAttribute('data-section', 'account-info');
+                    
+                    // Insert after personal information section
+                    const personalInfoSection = document.querySelector('.details-section');
+                    if (personalInfoSection) {
+                        personalInfoSection.parentNode.insertBefore(additionalInfo, personalInfoSection.nextSibling);
+                    }
+                } else {
+                    throw new Error('No user data received');
+                }
+                
+                // Helper function to safely update container HTML
+                const updateContainer = (id, html) => {
+                    const container = document.getElementById(id);
+                    if (container) {
+                        container.innerHTML = html;
+                    }
+                };
+
+                // Update orders
+                try {
+                    const ordersHtml = data.orders && data.orders.length ? data.orders.map(order => `
+                        <div class="order-item">
+                            <div class="order-header">
+                                <span class="order-id">Order #${order.id || 'N/A'}</span>
+                                <span class="order-date">${order.date || 'N/A'}</span>
+                                <span class="order-status ${order.status || ''}">${order.status || 'N/A'}</span>
+                                <span class="order-total">₱${(order.total_amount || 0).toFixed(2)}</span>
+                            </div>
+                            <div class="order-items">
+                ${(order.items || []).map(item => `
+                    <div class="order-product">
+                        <span>${item.product_name || 'N/A'}</span>
+                        <span>${item.size || 'N/A'} / ${item.color || 'N/A'}</span>
+                        <span>x${item.quantity || 0}</span>
+                        <span>₱${(item.price || 0).toFixed(2)}</span>
+                    </div>
+                `).join('')}
+            </div>
+            ${order.cancel_refund_reason ? `<p><strong>Reason:</strong> ${order.cancel_refund_reason}</p>` : ''}
+        </div>
+    `).join('') : '<p>No orders yet</p>';
+    updateContainer('userOrders', ordersHtml);
+                } catch (error) {
+                    console.error('Error updating orders:', error);
+                    updateContainer('userOrders', '<p>Error loading orders</p>');
+                }
+                
+                // Update cart items
+                try {
+                    const cartHtml = data.cart_items && data.cart_items.length ? data.cart_items.map(item => `
+                        <div class="cart-item">
+                            <span>${item.product_name || 'N/A'}</span>
+                            <span>${item.size || 'N/A'} / ${item.color || 'N/A'}</span>
+                            <span>x${item.quantity || 0}</span>
+                            <span>₱${(item.price || 0).toFixed(2)}</span>
+                        </div>
+                    `).join('') : '<p>Cart is empty</p>';
+                    updateContainer('userCart', cartHtml);
+                } catch (error) {
+                    console.error('Error updating cart:', error);
+                    updateContainer('userCart', '<p>Error loading cart items</p>');
+                }
+                
+            } catch (error) {
+                console.error('Error fetching user details:', error);
+                updateContainer('userDetails', `
+                    <div class="error-state">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <p>${error.message || 'Failed to load user details. Please try again.'}</p>
+                    </div>
+                `);
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}

@@ -1,0 +1,319 @@
+{% extends "base.html" %}
+
+{% block title %}Checkout - ShoeStore{% endblock %}
+
+{% block content %}
+<div class="checkout-container">
+    <h2>Checkout</h2>
+    <div class="checkout-grid">
+        <!-- Shipping Information -->
+        <div class="shipping-section">
+            <h3>Shipping Information</h3>
+            <form id="shipping-form" class="checkout-form">
+                <div class="form-group">
+                    <label for="full_name">Full Name</label>
+                    <input type="text" id="full_name" name="full_name" required 
+                           value="{{ user.full_name or '' }}" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label for="phone">Phone Number</label>
+                    <input type="tel" id="phone" name="phone" required 
+                           value="{{ user.phone or '' }}" class="form-input"
+                           placeholder="e.g., 09XX-XXX-XXXX">
+                </div>
+                <div class="form-group">
+                    <label for="address_line1">Address Line 1</label>
+                    <input type="text" id="address_line1" name="address_line1" required 
+                           value="{{ user.address_line1 or '' }}" class="form-input"
+                           placeholder="House/Unit No., Street Name">
+                </div>
+                <div class="form-group">
+                    <label for="address_line2">Address Line 2 (Optional)</label>
+                    <input type="text" id="address_line2" name="address_line2" 
+                           value="{{ user.address_line2 or '' }}" class="form-input"
+                           placeholder="Apartment, Building, etc.">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="city">City</label>
+                        <input type="text" id="city" name="city" required 
+                               value="{{ user.city or '' }}" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label for="province">Province</label>
+                        <input type="text" id="province" name="province" required 
+                               value="{{ user.province or '' }}" class="form-input">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="postal_code">Postal Code</label>
+                    <input type="text" id="postal_code" name="postal_code" required 
+                           value="{{ user.postal_code or '' }}" class="form-input">
+                </div>
+            </form>
+        </div>
+
+        <!-- Order Summary -->
+        <div class="order-summary">
+            <h3>Order Summary</h3>
+            <div class="order-items">
+                {% for item in cart_items %}
+                <div class="order-item">
+                    <img src="{{ item.variation.image_url }}" alt="{{ item.variation.product.name }}" class="order-item-image">
+                    <div class="order-item-details">
+                        <h4>{{ item.variation.product.name }}</h4>
+                        <p>Size: {{ item.variation.size }} | Color: {{ item.variation.color }}</p>
+                        <p>Quantity: {{ item.quantity }}</p>
+                        <p class="item-price">₱{{ "%.2f"|format(item.variation.price * item.quantity) }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <div class="order-totals">
+                <div class="total-row">
+                    <span>Subtotal:</span>
+                    <span>₱{{ "%.2f"|format(subtotal) }}</span>
+                </div>
+                <div class="total-row">
+                    <span>Shipping Fee:</span>
+                    <span>₱100.00</span>
+                </div>
+                <div class="total-row grand-total">
+                    <span>Total:</span>
+                    <span>₱{{ "%.2f"|format(subtotal + 100) }}</span>
+                </div>
+            </div>
+
+            <!-- Payment Method Selection -->
+            <div class="payment-section">
+                <h3>Payment Method</h3>
+                <div class="payment-options">
+                    <div class="payment-option">
+                        <input type="radio" id="gcash" name="payment_method" value="gcash" checked>
+                        <label for="gcash">
+                            <i class="fas fa-mobile-alt"></i>
+                            GCash
+                        </label>
+                    </div>
+                    <div class="payment-option">
+                        <input type="radio" id="maya" name="payment_method" value="maya">
+                        <label for="maya">
+                            <i class="fas fa-wallet"></i>
+                            Maya
+                        </label>
+                    </div>
+                    <div class="payment-option">
+                        <input type="radio" id="cod" name="payment_method" value="cod">
+                        <label for="cod">
+                            <i class="fas fa-money-bill-wave"></i>
+                            Cash on Delivery
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <button id="place-order" class="btn btn-primary btn-large">
+                Place Order
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+.checkout-container {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+.checkout-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+}
+
+.shipping-section, .order-summary {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.checkout-form .form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.form-input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+}
+
+.form-input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.order-item {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem 0;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.order-item-image {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.order-item-details h4 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1rem;
+}
+
+.item-price {
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.order-totals {
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 2px solid #e5e7eb;
+}
+
+.total-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+}
+
+.grand-total {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--primary-color);
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+.payment-section {
+    margin: 2rem 0;
+}
+
+.payment-options {
+    display: grid;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.payment-option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.payment-option:hover {
+    border-color: var(--primary-color);
+    background-color: #f8fafc;
+}
+
+.payment-option input[type="radio"] {
+    margin: 0;
+}
+
+.payment-option label {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.payment-option i {
+    font-size: 1.25rem;
+    color: var(--primary-color);
+}
+
+.btn-large {
+    padding: 1.25rem;
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-top: 2rem;
+}
+
+@media (max-width: 768px) {
+    .checkout-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const placeOrderBtn = document.getElementById('place-order');
+    const shippingForm = document.getElementById('shipping-form');
+    
+    placeOrderBtn.addEventListener('click', function() {
+        // Validate shipping form
+        if (!shippingForm.checkValidity()) {
+            shippingForm.reportValidity();
+            return;
+        }
+
+        // Get selected payment method
+        const paymentMethod = document.querySelector('input[name="payment_method"]:checked').value;
+        
+        // Get shipping information
+        const formData = new FormData(shippingForm);
+        const shippingData = Object.fromEntries(formData.entries());
+        
+        // Send order to server
+        fetch('/checkout', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                shipping: shippingData,
+                payment_method: paymentMethod
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                if (paymentMethod === 'cod') {
+                    window.location.href = '/order/confirmation/' + data.order_id;
+                } else {
+                    window.location.href = '/payment/' + data.order_id;
+                }
+            } else {
+                alert(data.message || 'An error occurred. Please try again.');
+                console.error('Error message from server:', data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+        });
+    });
+});
+</script>
+{% endblock %}

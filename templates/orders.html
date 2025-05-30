@@ -1,0 +1,269 @@
+{% extends "base.html" %}
+
+{% block title %}My Orders - ShoeStore{% endblock %}
+
+{% block content %}
+<div class="orders-container">
+    <h2>My Orders</h2>
+    {% if orders %}
+        <div class="orders-list">
+            {% for order in orders %}
+            <div class="order-card">
+                <div class="order-header">
+                    <h3>Order #{{ order.id }}</h3>
+                    <p>Order Date: {{ order.order_date.strftime('%Y-%m-%d') }}</p>
+                    <p>Status: <span class="order-status {{ order.status }}">{{ order.status }}</span></p>
+                    {% if order.expected_delivery_date %}
+                    <p>Expected Delivery: {{ order.expected_delivery_date.strftime('%Y-%m-%d') }}</p>
+                    {% endif %}
+                </div>
+                <div class="order-items">
+                    {% for item in order.items %}
+                    <div class="order-item">
+                        <p><strong>{{ item.variation.product.name }}</strong> - Size: {{ item.variation.size }}, Color: {{ item.variation.color }}</p>
+                        <p>Quantity: {{ item.quantity }}</p>
+                        <p>Price: ₱{{ "%.2f"|format(item.price * item.quantity) }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+<div class="order-actions">
+    {% if order.status not in ['cancelled', 'refund', 'complete'] %}
+<button class="btn btn-warning btn-cancel" data-order-id="{{ order.id }}">Cancel Order</button>
+<button class="btn btn-danger btn-refund" data-order-id="{{ order.id }}">Request Refund</button>
+<button class="btn btn-success btn-received" data-order-id="{{ order.id }}">Order Received</button>
+{% else %}
+<p>No actions available</p>
+{% endif %}
+{% if order.cancel_refund_reason %}
+<p><strong>Reason:</strong> {{ order.cancel_refund_reason }}</p>
+{% endif %}
+</div>
+
+<!-- Modal for reason selection -->
+<div id="reasonModal" class="modal hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="modal-content bg-white rounded-lg p-6 w-96 max-w-full">
+        <h3 class="text-lg font-semibold mb-4" id="modalTitle">Select Reason</h3>
+        <form id="reasonForm">
+            <div id="reasonOptions" class="mb-4">
+                <!-- Options will be inserted here -->
+            </div>
+            <div class="flex justify-end gap-4">
+                <button type="button" id="cancelReasonBtn" class="btn btn-secondary">Cancel</button>
+                <button type="submit" class="btn btn-primary">Submit</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.modal.hidden {
+    display: none;
+}
+.modal {
+    display: flex;
+}
+.modal-content {
+    max-height: 80vh;
+    overflow-y: auto;
+}
+</style>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>You have no orders yet.</p>
+    {% endif %}
+</div>
+
+<style>
+.orders-container {
+    max-width: 900px;
+    margin: 2rem auto;
+    padding: 1rem;
+}
+
+.order-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    background: #fff;
+}
+
+.order-header {
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.order-status {
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    text-transform: capitalize;
+}
+
+.order-status.pending { background: #fff3cd; color: #856404; }
+.order-status.paid { background: #d4edda; color: #155724; }
+.order-status.shipped { background: #cce5ff; color: #004085; }
+.order-status.delivered { background: #d1e7dd; color: #0f5132; }
+.order-status.cancelled { background: #f8d7da; color: #721c24; }
+.order-status.refund { background: #f5c6cb; color: #721c24; }
+.order-status.complete { background: #d4edda; color: #155724; }
+
+.order-items p {
+    margin: 0.25rem 0;
+}
+
+.order-actions {
+    margin-top: 1rem;
+    display: flex;
+    gap: 1rem;
+}
+
+.btn {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    color: white;
+    transition: background-color 0.3s ease;
+}
+
+.btn-cancel {
+    background-color: #f59e0b;
+}
+
+.btn-cancel:hover {
+    background-color: #d97706;
+}
+
+.btn-refund {
+    background-color: #dc2626;
+}
+
+.btn-refund:hover {
+    background-color: #b91c1c;
+}
+
+.btn-received {
+    background-color: #16a34a;
+}
+
+.btn-received:hover {
+    background-color: #15803d;
+}
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const reasonModal = document.getElementById('reasonModal');
+        const reasonForm = document.getElementById('reasonForm');
+        const reasonOptions = document.getElementById('reasonOptions');
+        const modalTitle = document.getElementById('modalTitle');
+        const cancelReasonBtn = document.getElementById('cancelReasonBtn');
+
+        let currentOrderId = null;
+        let currentStatus = null;
+
+        const refundReasons = [
+            "Damaged or defective products.",
+            "Non-delivery of goods or services.",
+            "Double charges or errors in payment."
+        ];
+
+        const cancelReasons = [
+            "Change payment method.",
+            "Change address.",
+            "Shipping cost too high.",
+            "I changed my mind.",
+            "Want to place a new order with more/different items.",
+            "Delivery time is too long."
+        ];
+
+        function openReasonModal(orderId, status) {
+            currentOrderId = orderId;
+            currentStatus = status;
+            modalTitle.textContent = status === 'refund' ? 'Reasons for requesting a refund:' : 'Reasons for cancelling the order:';
+            reasonOptions.innerHTML = '';
+
+            const reasons = status === 'refund' ? refundReasons : cancelReasons;
+            reasons.forEach((reason, index) => {
+                const optionId = `reasonOption${index}`;
+                const option = document.createElement('div');
+                option.className = 'mb-2';
+                option.innerHTML = `
+                    <input type="radio" id="${optionId}" name="reason" value="${reason}" required>
+                    <label for="${optionId}" class="ml-2">${reason}</label>
+                `;
+                reasonOptions.appendChild(option);
+            });
+
+            reasonModal.classList.remove('hidden');
+        }
+
+        cancelReasonBtn.addEventListener('click', () => {
+            reasonModal.classList.add('hidden');
+            currentOrderId = null;
+            currentStatus = null;
+        });
+
+        reasonForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const selectedReason = reasonForm.reason.value;
+            if (!selectedReason) {
+                alert('Please select a reason.');
+                return;
+            }
+            updateOrderStatus(currentOrderId, currentStatus, selectedReason);
+            reasonModal.classList.add('hidden');
+            currentOrderId = null;
+            currentStatus = null;
+        });
+
+        function updateOrderStatus(orderId, status, reason=null) {
+            fetch(`/order/${orderId}/update_status`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ status: status, reason: reason })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Order status updated to ' + data.new_status);
+                    location.reload();
+                } else {
+                    alert('Failed to update order status: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while updating order status');
+            });
+        }
+
+        document.querySelectorAll('.btn-cancel').forEach(button => {
+            button.addEventListener('click', () => {
+                openReasonModal(button.dataset.orderId, 'cancelled');
+            });
+        });
+
+        document.querySelectorAll('.btn-refund').forEach(button => {
+            button.addEventListener('click', () => {
+                openReasonModal(button.dataset.orderId, 'refund');
+            });
+        });
+
+        document.querySelectorAll('.btn-received').forEach(button => {
+            button.addEventListener('click', () => {
+                if (confirm('Confirm that you have received this order?')) {
+                    updateOrderStatus(button.dataset.orderId, 'received');
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

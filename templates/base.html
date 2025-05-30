@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Shoe Store{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Poppins', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="flex flex-col min-h-screen bg-gray-50">
+    <header class="bg-white shadow-sm">
+        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex-shrink-0">
+                    <a href="{{ url_for('index') }}" class="text-2xl font-bold text-blue-500">ShoeStore</a>
+                </div>
+                {% if not request.endpoint.startswith('admin_') %}
+                <div class="hidden md:flex md:items-center md:space-x-8 ml-auto mr-4">
+                    <a href="{{ url_for('index') }}" class="inline-flex items-center px-1 pt-1 text-gray-700 hover:text-blue-500">Home</a>
+                    <a href="{{ url_for('products') }}" class="inline-flex items-center px-1 pt-1 text-gray-700 hover:text-blue-500">Products</a>
+                </div>
+                {% endif %}
+                <div class="flex items-center">
+                        {% if session.get('user_id') %}
+                            {% if not request.endpoint.startswith('admin_') %}
+                            <a href="{{ url_for('cart') }}" class="p-2 text-gray-700 hover:text-blue-500">
+                                <i class="fas fa-shopping-cart"></i>
+                                <span class="ml-1">Cart</span>
+                            </a>
+                            <a href="{{ url_for('customer_orders') }}" class="p-2 ml-4 text-gray-700 hover:text-blue-500">
+                                <i class="fas fa-box"></i>
+                                <span class="ml-1">My Orders</span>
+                            </a>
+                            {% endif %}
+                            {% if session.get('is_admin') %}
+                                <a href="{{ url_for('admin_dashboard') }}" class="p-2 ml-4 text-gray-700 hover:text-blue-500">
+                                    <i class="fas fa-user-shield"></i>
+                                    <span class="ml-1">Admin</span>
+                                </a>
+                            {% endif %}
+<div class="ml-4 relative" id="accountDropdown">
+    <button class="p-2 text-gray-700 hover:text-blue-500 flex items-center" id="accountButton">
+        <i class="fas fa-user"></i>
+        <span class="ml-1">Account</span>
+    </button>
+    <div class="hidden absolute right-0 w-48 py-2 mt-2 bg-white rounded-md shadow-xl z-20" id="dropdownMenu">
+        <a href="{{ url_for('settings') }}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+            Settings
+        </a>
+        <a href="{{ url_for('logout') }}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+            Logout
+        </a>
+    </div>
+</div>
+                        {% else %}
+                            <a href="{{ url_for('auth') }}" class="p-2 text-gray-700 hover:text-blue-500">
+                                <i class="fas fa-user"></i>
+                                <span class="ml-1">Account</span>
+                            </a>
+                        {% endif %}
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="flex-grow">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="bg-gray-800 text-white mt-auto">
+        <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">About Us</h3>
+                    <p class="text-gray-300">Your trusted source for quality footwear in the Philippines.</p>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Contact</h3>
+                    <p class="text-gray-300">Email: awitsonggg214@gmail.com.ph</p>
+                    <p class="text-gray-300">Phone: +63 9166480337</p>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Follow Us</h3>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-gray-300 hover:text-white"><i class="fab fa-facebook fa-lg"></i></a>
+                        <a href="#" class="text-gray-300 hover:text-white"><i class="fab fa-instagram fa-lg"></i></a>
+                        <a href="#" class="text-gray-300 hover:text-white"><i class="fab fa-twitter fa-lg"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-8 pt-8 border-t border-gray-700 text-center">
+                <p class="text-gray-300">&copy; 2025 ShoeStore. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    {% block scripts %}{% endblock %}
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const accountDropdown = document.getElementById('accountDropdown');
+            const dropdownMenu = document.getElementById('dropdownMenu');
+            let timeoutId;
+
+            function showDropdown() {
+                clearTimeout(timeoutId);
+                dropdownMenu.classList.remove('hidden');
+            }
+
+            function hideDropdown() {
+                timeoutId = setTimeout(() => {
+                    dropdownMenu.classList.add('hidden');
+                }, 200); // 200ms delay before hiding
+            }
+
+            // Show dropdown on button hover
+            accountDropdown.addEventListener('mouseenter', showDropdown);
+            
+            // Hide dropdown when mouse leaves the entire dropdown area
+            accountDropdown.addEventListener('mouseleave', hideDropdown);
+            
+            // Cancel hiding when moving from button to dropdown menu
+            dropdownMenu.addEventListener('mouseenter', showDropdown);
+            
+            // Hide when leaving dropdown menu
+            dropdownMenu.addEventListener('mouseleave', hideDropdown);
+            
+            // Toggle dropdown on button click (for mobile)
+            document.getElementById('accountButton').addEventListener('click', function(e) {
+                e.preventDefault();
+                dropdownMenu.classList.toggle('hidden');
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!accountDropdown.contains(e.target)) {
+                    dropdownMenu.classList.add('hidden');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
