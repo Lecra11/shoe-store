@@ -12,7 +12,9 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'your-secret-key-here'  # Required for sessions and flash messages
 db = SQLAlchemy(app)
 
+# =====================
 # Forgot password route
+# =====================
 @app.route('/forgot-password', methods=['GET', 'POST'])
 def forgot_password():
     if request.method == 'POST':
@@ -34,9 +36,12 @@ def forgot_password():
             # For demonstration, show the link in the flash message
             flash(f'Password reset link (for demo): {reset_url}', 'info')
         return render_template('reset_password.html', token=None)
+
     return render_template('reset_password.html', token=None)
 
+# =====================
 # Reset password route
+# =====================
 @app.route('/reset-password/<token>', methods=['GET', 'POST'])
 def reset_password(token):
     if not token:
@@ -70,7 +75,9 @@ def reset_password(token):
     
     return render_template('reset_password.html', token=token)
 
+# =====================
 # Models
+# =====================
 import secrets
 from datetime import datetime, timedelta
 
@@ -149,6 +156,7 @@ class Order(db.Model):
     total_amount = db.Column(db.Float, nullable=False)
     expected_delivery_date = db.Column(db.DateTime)  # New field for expected delivery date
     cancel_refund_reason = db.Column(db.Text)  # New field for cancellation/refund reason
+    
     
     # Shipping Information (copied from user but can be different)
     full_name = db.Column(db.String(100), nullable=False)
@@ -236,7 +244,9 @@ class ProductVariation(db.Model):
             'image_url': self.image_url
         }
 
+# =====================
 # Authentication routes
+# =====================
 @app.route('/auth', methods=['GET', 'POST'])
 def auth():
     if request.method == 'GET':
@@ -341,6 +351,9 @@ def logout():
     session.clear()
     return redirect(url_for('index'))
 
+# =====================
+# Settings routes
+# =====================
 @app.route('/settings', methods=['GET', 'POST'])
 def settings():
     if 'user_id' not in session:
@@ -398,6 +411,9 @@ def settings():
     
     return render_template('settings.html', user=user, personal_info_set=personal_info_set)
 
+# =====================
+# Deactivate account
+# =====================
 @app.route('/deactivate_account', methods=['POST'])
 def deactivate_account():
     if 'user_id' not in session:
@@ -447,6 +463,9 @@ def deactivate_account():
         flash('An error occurred while deactivating account. Please try again.', 'error')
         return redirect(url_for('settings'))
 
+# =====================
+# Change account (placeholder)
+# =====================
 @app.route('/change_account')
 def change_account():
     # Placeholder for change account page
@@ -455,7 +474,9 @@ def change_account():
         return redirect(url_for('auth'))
     return "Change account page - to be implemented"
 
+# =====================
 # Cart routes
+# =====================
 @app.route('/cart')
 def cart():
     if 'user_id' not in session:
@@ -464,7 +485,12 @@ def cart():
     
     cart_items = CartItem.query.filter_by(user_id=session['user_id']).all()
     subtotal = sum(item.variation.price * item.quantity for item in cart_items)
-    return render_template('cart.html', cart_items=cart_items, subtotal=subtotal)
+    
+    return render_template(
+        'cart.html',
+        cart_items=cart_items,
+        subtotal=subtotal
+    )
 
 @app.route('/checkout', methods=['GET', 'POST'])
 def checkout():
@@ -479,7 +505,13 @@ def checkout():
         
         user = User.query.get(session['user_id'])
         subtotal = sum(item.variation.price * item.quantity for item in cart_items)
-        return render_template('checkout.html', cart_items=cart_items, user=user, subtotal=subtotal)
+        
+        return render_template(
+            'checkout.html',
+            cart_items=cart_items,
+            user=user,
+            subtotal=subtotal
+        )
     
     # Handle POST request
     data = request.get_json()
@@ -551,7 +583,10 @@ def payment(order_id):
     if order.user_id != session['user_id']:
         abort(403)
     
-    return render_template('payment.html', order=order)
+    return render_template(
+        'payment.html',
+        order=order
+    )
 
 @app.route('/payment/<int:order_id>/confirm', methods=['POST'])
 def confirm_payment(order_id):
@@ -593,9 +628,14 @@ def order_confirmation(order_id):
     if order.user_id != session['user_id']:
         abort(403)
     
-    return render_template('order_confirmation.html', order=order)
+    return render_template(
+        'order_confirmation.html',
+        order=order
+    )
 
-# New route: Customer view orders
+# =====================
+# Customer orders
+# =====================
 @app.route('/orders')
 def customer_orders():
     if 'user_id' not in session:
@@ -604,9 +644,15 @@ def customer_orders():
     
     user_id = session['user_id']
     orders = Order.query.filter_by(user_id=user_id).order_by(Order.order_date.desc()).all()
-    return render_template('orders.html', orders=orders)
+    
+    return render_template(
+        'orders.html',
+        orders=orders
+    )
 
-# New route: Update order status (cancel/refund/received) by customer or admin
+# =====================
+# Update order status
+# =====================
 @app.route('/order/<int:order_id>/update_status', methods=['POST'])
 def update_order_status(order_id):
     if 'user_id' not in session:
@@ -653,6 +699,9 @@ def update_order_status(order_id):
     
     return jsonify({'success': True, 'new_status': order.status})
 
+# =====================
+# Cart item management
+# =====================
 @app.route('/cart/add/<int:variation_id>', methods=['POST'])
 def add_to_cart(variation_id):
     if 'user_id' not in session:
@@ -714,7 +763,9 @@ def update_cart_quantity(item_id):
         'message': 'Cart updated successfully'
     })
 
+# =====================
 # Admin routes
+# =====================
 @app.route('/admin')
 def admin_dashboard():
     if not session.get('is_admin'):
@@ -737,11 +788,13 @@ def admin_dashboard():
         .filter(~Order.status.in_(['cancelled', 'refund']))\
         .scalar() or 0
     
-    return render_template('admin/dashboard.html', 
-                         users=users, 
-                         products=products,
-                         total_sales=total_sales,
-                         total_sold=total_sold)
+    return render_template(
+        'admin/dashboard.html',
+        users=users,
+        products=products,
+        total_sales=total_sales,
+        total_sold=total_sold
+    )
 
 @app.route('/admin/product_variation/<int:variation_id>/update_stock', methods=['POST'])
 def update_product_stock(variation_id):
@@ -846,8 +899,9 @@ def get_user_details(user_id):
             'error': 'Failed to load user details. Please try again.'
         }), 500
 
-
-# This is a basic example of a decorator that can be used to check if a user is logged in before allowing them to access a certain route.
+# =====================
+# Decorators
+# =====================
 def login_required(f):
     def decorated_function(*args, **kwargs):
         if 'user_id' not in session:
@@ -856,7 +910,6 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-# This decorator can be used to check if a user is an admin before allowing them to access a certain route.
 def admin_required(f):
     def decorated_function(*args, **kwargs):
         if 'user_id' not in session or not session.get('is_admin'):
@@ -865,22 +918,32 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-
+# =====================
 # Main routes
+# =====================
 @app.route('/')
 def index():
     products = Product.query.all()
-    return render_template('index.html', products=products)
+    return render_template(
+        'index.html',
+        products=products
+    )
 
 @app.route('/products')
 def products():
     products = Product.query.all()
-    return render_template('products.html', products=products)
+    return render_template(
+        'products.html',
+        products=products
+    )
 
 @app.route('/product/<int:product_id>')
 def product_detail(product_id):
     product = Product.query.get_or_404(product_id)
-    return render_template('product_detail.html', product=product)
+    return render_template(
+        'product_detail.html',
+        product=product
+    )
 
 @app.route('/api/variations/<int:product_id>')
 def get_variations(product_id):

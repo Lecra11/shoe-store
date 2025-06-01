@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Shoe Store{% endblock %}</title>
+    <title>{% block title %}MyKix{% endblock %}</title>
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='img/logo.png') }}">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -26,7 +27,13 @@
         <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
                 <div class="flex-shrink-0">
-                    <a href="{{ url_for('index') }}" class="text-2xl font-bold text-blue-500">ShoeStore</a>
+                    <a href="{{ url_for('index') }}" class="text-2xl font-bold text-blue-500 flex items-center">
+                        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="MyKix Logo" class="h-16 w-16 mr-4 inline-block align-middle">
+                        <div class="flex flex-col">
+                            <span class="text-3xl font-bold text-blue-500 leading-tight">MyKix</span>
+                            <span class="text-base text-gray-500 font-medium tracking-wide">Step Up Your Style</span>
+                        </div>
+                    </a>
                 </div>
                 {% if not request.endpoint.startswith('admin_') %}
                 <div class="hidden md:flex md:items-center md:space-x-8 ml-auto mr-4">
@@ -103,7 +110,7 @@
                 </div>
             </div>
             <div class="mt-8 pt-8 border-t border-gray-700 text-center">
-                <p class="text-gray-300">&copy; 2025 ShoeStore. All rights reserved.</p>
+                <p class="text-gray-300">&copy; 2025 MyKix. All rights reserved.</p>
             </div>
         </div>
     </footer>
