@@ -6,11 +6,13 @@
 <div class="settings-container max-w-3xl mx-auto py-8">
     <h2 class="text-2xl font-semibold mb-6">Account Settings</h2>
     {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="alert alert-{{ category }} mb-4">{{ message }}</div>
-            {% endfor %}
-        {% endif %}
+    {% if messages %}
+    {% for category, message in messages %}
+    {% if message != 'Logged in successfully!' %}
+    <div class="alert alert-{{ category }} mb-4">{{ message }}</div>
+    {% endif %}
+    {% endfor %}
+    {% endif %}
     {% endwith %}
     <form method="POST" action="{{ url_for('settings') }}" class="space-y-6">
         {% if personal_info_set %}
@@ -75,17 +77,17 @@
 
     <hr class="my-8">
 
-    <div>
-        <h3 class="text-xl font-semibold mb-4">Account Actions</h3>
-        <a href="{{ url_for('change_account') }}" class="btn btn-secondary mb-4 inline-block">Change Account</a>
-        <form method="POST" action="{{ url_for('deactivate_account') }}" onsubmit="return confirm('Are you sure you want to deactivate your account? This action cannot be undone.');" class="space-y-4 max-w-md">
-            <h4 class="font-medium">Deactivate Account</h4>
-            <div class="form-group">
-                <label for="password">Enter Password to Confirm</label>
-                <input type="password" id="password" name="password" class="input" required>
-            </div>
-            <button type="submit" class="btn btn-danger">Deactivate Account</button>
-        </form>
+    <div class="account-actions-box" style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 2rem; margin-top: 2rem; background: #fafbfc;">
+    <h3 class="text-xl font-semibold mb-4">Account Actions</h3>
+    <a href="{{ url_for('change_account') }}" class="btn btn-secondary mb-4 inline-block" style="border: 2px solid #4299e1; border-radius: 6px; background: #4299e1; color: #fff; font-weight: 600;">Change Account</a>
+    <form method="POST" action="{{ url_for('deactivate_account') }}" onsubmit="return confirm('Are you sure you want to deactivate your account? This action cannot be undone.');" class="space-y-4 max-w-md">
+    <h4 class="font-medium">Deactivate Account</h4>
+    <div class="form-group">
+    <label for="password">Enter Password to Confirm</label>
+    <input type="password" id="password" name="password" class="input" required>
     </div>
-</div>
-{% endblock %}
+    <button type="submit" class="btn btn-danger" style="border: 2px solid #dc2626; border-radius: 6px; background: #dc2626; color: #fff; font-weight: 600;">Deactivate Account</button>
+    </form>
+    </div>
+    </div>
+    {% endblock %}

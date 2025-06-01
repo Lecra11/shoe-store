@@ -27,13 +27,15 @@
                     {% endfor %}
                 </div>
 <div class="order-actions">
-    {% if order.status not in ['cancelled', 'refund', 'complete'] %}
-<button class="btn btn-warning btn-cancel" data-order-id="{{ order.id }}">Cancel Order</button>
-<button class="btn btn-danger btn-refund" data-order-id="{{ order.id }}">Request Refund</button>
-<button class="btn btn-success btn-received" data-order-id="{{ order.id }}">Order Received</button>
-{% else %}
-<p>No actions available</p>
-{% endif %}
+    {% if order.status not in ['cancelled', 'refund'] %}
+    <button class="btn btn-warning btn-cancel" data-order-id="{{ order.id }}">Cancel Order</button>
+    <button class="btn btn-danger btn-refund" data-order-id="{{ order.id }}">Request Refund</button>
+    {% if order.status not in ['complete'] %}
+    <button class="btn btn-success btn-received" data-order-id="{{ order.id }}">Order Received</button>
+    {% endif %}
+    {% else %}
+    <p>No actions available</p>
+    {% endif %}
 {% if order.cancel_refund_reason %}
 <p><strong>Reason:</strong> {{ order.cancel_refund_reason }}</p>
 {% endif %}

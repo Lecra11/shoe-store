@@ -633,6 +633,13 @@ def update_order_status(order_id):
     if not is_admin and new_status == 'complete':
         return jsonify({'success': False, 'message': 'Unauthorized status update'}), 403
     
+    # If order is being cancelled or refunded, restore stock
+    if new_status in ['cancelled', 'refund']:
+        for item in order.items:
+            variation = item.variation
+            variation.stock += item.quantity
+            db.session.add(variation)
+    
     # Update status and reason
     if new_status == 'received':
         order.status = 'complete'
@@ -717,15 +724,17 @@ def admin_dashboard():
     users = User.query.filter_by(is_admin=False).all()
     products = Product.query.all()
     
-    # Calculate total sales (from paid orders)
+    # Calculate total sales (exclude cancelled/refund orders)
     total_sales = db.session.query(db.func.sum(Order.total_amount))\
-        .filter(Order.status == 'paid')\
+        .filter(Order.status.in_(['paid', 'complete']))\
+        .filter(~Order.status.in_(['cancelled', 'refund']))\
         .scalar() or 0
     
-    # Calculate total products sold
+    # Calculate total products sold (exclude cancelled/refund orders)
     total_sold = db.session.query(db.func.sum(OrderItem.quantity))\
         .join(Order)\
-        .filter(Order.status == 'paid')\
+        .filter(Order.status.in_(['paid', 'complete']))\
+        .filter(~Order.status.in_(['cancelled', 'refund']))\
         .scalar() or 0
     
     return render_template('admin/dashboard.html', 
@@ -803,6 +812,7 @@ def get_user_details(user_id):
                 'date': order.order_date.strftime('%Y-%m-%d %H:%M:%S'),
                 'status': order.status,
                 'total_amount': order.total_amount,
+                'payment_method': order.payment_method,  # Add payment method here
                 'items': order_items,
                 'cancel_refund_reason': order.cancel_refund_reason  # Include the reason here
             })

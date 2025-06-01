@@ -883,40 +883,51 @@ document.addEventListener('DOMContentLoaded', function() {
                     updateElement('userProvince', data.user.province);
                     updateElement('userPostal', data.user.postal_code);
                     
-                    // Add timestamps if available
+                    // Check for incomplete info
+                    const requiredFields = [
+                    data.user.full_name,
+                    data.user.phone,
+                    data.user.address_line1,
+                    data.user.city,
+                    data.user.province,
+                    data.user.postal_code
+                    ];
+                    let incompleteInfo = requiredFields.some(f => !f || f === 'N/A');
+                    
+                    // Add timestamps and incomplete info warning if needed
                     const createdAt = data.user.created_at ? new Date(data.user.created_at).toLocaleString() : 'N/A';
                     const lastLogin = data.user.last_login ? new Date(data.user.last_login).toLocaleString() : 'N/A';
                     
-                    // Add additional info to the modal
                     const additionalInfo = document.createElement('div');
                     additionalInfo.className = 'details-section';
                     additionalInfo.innerHTML = `
-                        <h4>Account Information</h4>
-                        <div class="info-grid">
-                            <div class="info-item">
-                                <label>Account Created:</label>
-                                <span>${createdAt}</span>
-                            </div>
-                            <div class="info-item">
-                                <label>Last Login:</label>
-                                <span>${lastLogin}</span>
-                            </div>
-                        </div>
+                    <h4>Account Information</h4>
+                    <div class="info-grid">
+                    <div class="info-item">
+                    <label>Account Created:</label>
+                    <span>${createdAt}</span>
+                    </div>
+                    <div class="info-item">
+                    <label>Last Login:</label>
+                    <span>${lastLogin}</span>
+                    </div>
+                    </div>
+                    ${incompleteInfo ? '<div style="color: #c53030; margin-top: 1em;"><strong>Warning:</strong> Personal or address information is incomplete.</div>' : ''}
                     `;
                     
                     // Remove existing account information section if it exists
                     const existingAccountInfo = document.querySelector('.details-section[data-section="account-info"]');
                     if (existingAccountInfo) {
-                        existingAccountInfo.remove();
+                    existingAccountInfo.remove();
                     }
-
+                    
                     // Add data attribute to identify this section
                     additionalInfo.setAttribute('data-section', 'account-info');
                     
                     // Insert after personal information section
                     const personalInfoSection = document.querySelector('.details-section');
                     if (personalInfoSection) {
-                        personalInfoSection.parentNode.insertBefore(additionalInfo, personalInfoSection.nextSibling);
+                    personalInfoSection.parentNode.insertBefore(additionalInfo, personalInfoSection.nextSibling);
                     }
                 } else {
                     throw new Error('No user data received');
@@ -933,27 +944,30 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Update orders
                 try {
                     const ordersHtml = data.orders && data.orders.length ? data.orders.map(order => `
-                        <div class="order-item">
-                            <div class="order-header">
-                                <span class="order-id">Order #${order.id || 'N/A'}</span>
-                                <span class="order-date">${order.date || 'N/A'}</span>
-                                <span class="order-status ${order.status || ''}">${order.status || 'N/A'}</span>
-                                <span class="order-total">₱${(order.total_amount || 0).toFixed(2)}</span>
-                            </div>
-                            <div class="order-items">
-                ${(order.items || []).map(item => `
-                    <div class="order-product">
-                        <span>${item.product_name || 'N/A'}</span>
-                        <span>${item.size || 'N/A'} / ${item.color || 'N/A'}</span>
-                        <span>x${item.quantity || 0}</span>
-                        <span>₱${(item.price || 0).toFixed(2)}</span>
+                    <div class="order-item">
+                    <div class="order-header">
+                    <span class="order-id">Order #${order.id || 'N/A'}</span>
+                    <span class="order-date">${order.date || 'N/A'}</span>
+                    <span class="order-status ${order.status || ''}">${order.status || 'N/A'}</span>
+                    <span class="order-total">₱${(order.total_amount || 0).toFixed(2)}</span>
                     </div>
-                `).join('')}
-            </div>
-            ${order.cancel_refund_reason ? `<p><strong>Reason:</strong> ${order.cancel_refund_reason}</p>` : ''}
-        </div>
-    `).join('') : '<p>No orders yet</p>';
-    updateContainer('userOrders', ordersHtml);
+                    <div style="padding: 0 1rem 0.5rem 1rem; font-size: 0.95em; color: #4a5568;">
+                    <strong>Payment Method:</strong> ${order.payment_method ? order.payment_method.charAt(0).toUpperCase() + order.payment_method.slice(1) : 'N/A'}
+                    </div>
+                    <div class="order-items">
+                    ${(order.items || []).map(item => `
+                    <div class="order-product">
+                    <span>${item.product_name || 'N/A'}</span>
+                    <span>${item.size || 'N/A'} / ${item.color || 'N/A'}</span>
+                    <span>x${item.quantity || 0}</span>
+                    <span>₱${(item.price || 0).toFixed(2)}</span>
+                    </div>
+                    `).join('')}
+                    </div>
+                    ${order.cancel_refund_reason ? `<p><strong>Reason:</strong> ${order.cancel_refund_reason}</p>` : ''}
+                    </div>
+                    `).join('') : '<p>No orders yet</p>';
+                    updateContainer('userOrders', ordersHtml);
                 } catch (error) {
                     console.error('Error updating orders:', error);
                     updateContainer('userOrders', '<p>Error loading orders</p>');
