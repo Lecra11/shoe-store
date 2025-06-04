@@ -33,7 +33,10 @@
 
     <div class="products-grid">
         {% for product in products %}
-        <div class="product-card">
+        <div class="product-card" 
+            data-sizes="{{ product.variations|map(attribute='size')|join(',') }}"
+            data-colors="{{ product.variations|map(attribute='color')|join(',') }}"
+            data-prices="{{ product.variations|map(attribute='price')|join(',') }}">
             <a href="{{ url_for('product_detail', product_id=product.id) }}" class="product-link">
                 <div class="product-image-container">
                     <img src="{{ product.variations[0].image_url }}" alt="{{ product.name }}" class="product-image">
@@ -91,18 +94,38 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const filters = document.querySelectorAll('.filter-select');
-    
-    filters.forEach(filter => {
-        filter.addEventListener('change', function() {
-            // In a real application, this would trigger a server request
-            // For now, we'll just log the selected filters
-            const selectedFilters = {
-                size: document.getElementById('sizeFilter').value,
-                color: document.getElementById('colorFilter').value,
-                price: document.getElementById('priceFilter').value
-            };
-            console.log('Selected filters:', selectedFilters);
+    const productCards = document.querySelectorAll('.product-card');
+
+    function filterProducts() {
+        const size = document.getElementById('sizeFilter').value;
+        const color = document.getElementById('colorFilter').value;
+        const price = document.getElementById('priceFilter').value;
+
+        let priceMin = 0, priceMax = Infinity;
+        if (price) {
+            if (price === '0-2000') { priceMin = 0; priceMax = 2000; }
+            else if (price === '2000-3000') { priceMin = 2000; priceMax = 3000; }
+            else if (price === '3000-5000') { priceMin = 3000; priceMax = 5000; }
+            else if (price === '5000+') { priceMin = 5000; priceMax = Infinity; }
+        }
+
+        productCards.forEach(card => {
+            const sizes = card.getAttribute('data-sizes').split(',');
+            const colors = card.getAttribute('data-colors').split(',');
+            const prices = card.getAttribute('data-prices').split(',').map(Number);
+
+            let show = true;
+            if (size && !sizes.includes(size)) show = false;
+            if (color && !colors.includes(color)) show = false;
+            if (price) {
+                show = prices.some(p => p >= priceMin && p <= priceMax) && show;
+            }
+            card.style.display = show ? '' : 'none';
         });
+    }
+
+    filters.forEach(filter => {
+        filter.addEventListener('change', filterProducts);
     });
 });
 </script>

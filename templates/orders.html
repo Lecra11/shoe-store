@@ -13,8 +13,9 @@
                     <h3>Order #{{ order.id }}</h3>
                     <p>Order Date: {{ order.order_date.strftime('%Y-%m-%d') }}</p>
                     <p>Status: <span class="order-status {{ order.status }}">{{ order.status }}</span></p>
-                    {% if order.expected_delivery_date %}
-                    <p>Expected Delivery: {{ order.expected_delivery_date.strftime('%Y-%m-%d') }}</p>
+                    <p>Expected Delivery: {% if order.expected_delivery_date %}{{ order.expected_delivery_date.strftime('%Y-%m-%d') }}{% else %}N/A{% endif %}</p>
+                    {% if order.received_date %}
+                    <p>Date Received: {{ order.received_date.strftime('%Y-%m-%d %H:%M') }}</p>
                     {% endif %}
                 </div>
                 <div class="order-items">
@@ -25,6 +26,13 @@
                         <p>Price: ₱{{ "%.2f"|format(item.price * item.quantity) }}</p>
                     </div>
                     {% endfor %}
+                </div>
+                <div class="order-summary">
+                    <p>Shipping Fee: {% if order.shipping_fee == 0 %}<strong>Free Shipping</strong>{% else %}₱{{ "%.2f"|format(order.shipping_fee) }}{% endif %}</p>
+                    {% if order.shipping_discount %}
+                    <p>Shipping Discount: -₱{{ "%.2f"|format(order.shipping_discount) }}</p>
+                    {% endif %}
+                    <p><strong>Total: ₱{{ "%.2f"|format(order.total_amount) }}</strong></p>
                 </div>
 <div class="order-actions">
     {% if order.status not in ['cancelled', 'refund'] %}

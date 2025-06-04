@@ -943,16 +943,28 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 // Update orders
                 try {
-                    const ordersHtml = data.orders && data.orders.length ? data.orders.map(order => `
+                    const ordersHtml = data.orders && data.orders.length ? data.orders.map(order => {
+                        // Add Mark as Paid button for COD orders with pending payment
+                        let markAsPaidBtn = '';
+                        if (
+                            order.payment_method && order.payment_method.toLowerCase() === 'cod' &&
+                            (order.status === 'pending' || order.status === 'shipped' || order.status === 'delivered' || order.status === 'paid') &&
+                            (!order.payment_status || order.payment_status === 'pending')
+                        ) {
+                            markAsPaidBtn = `<button class="btn btn-sm btn-success btn-mark-paid" data-order-id="${order.id}">Mark as Paid</button>`;
+                        }
+                        return `
                     <div class="order-item">
                     <div class="order-header">
                     <span class="order-id">Order #${order.id || 'N/A'}</span>
-                    <span class="order-date">${order.date || 'N/A'}</span>
+                    <span class="order-date">Placed: ${order.date || 'N/A'}</span>
                     <span class="order-status ${order.status || ''}">${order.status || 'N/A'}</span>
                     <span class="order-total">₱${(order.total_amount || 0).toFixed(2)}</span>
                     </div>
                     <div style="padding: 0 1rem 0.5rem 1rem; font-size: 0.95em; color: #4a5568;">
-                    <strong>Payment Method:</strong> ${order.payment_method ? order.payment_method.charAt(0).toUpperCase() + order.payment_method.slice(1) : 'N/A'}
+                    <strong>Payment Method:</strong> ${order.payment_method ? order.payment_method.charAt(0).toUpperCase() + order.payment_method.slice(1) : 'N/A'}<br/>
+                    <strong>Expected Delivery:</strong> ${order.expected_delivery_date ? order.expected_delivery_date : 'N/A'}<br/>
+                    ${order.received_date ? `<strong>Date Received:</strong> ${order.received_date}<br/>` : ''}
                     </div>
                     <div class="order-items">
                     ${(order.items || []).map(item => `
@@ -964,9 +976,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     `).join('')}
                     </div>
-                    ${order.cancel_refund_reason ? `<p><strong>Reason:</strong> ${order.cancel_refund_reason}</p>` : ''}
+                    <div class="order-summary">
+                        <p>Shipping Fee: ${order.shipping_fee == 0 ? '<strong>Free Shipping</strong>' : `₱${(order.shipping_fee || 0).toFixed(2)}`}</p>
+                        ${order.shipping_discount ? `<p>Shipping Discount: -₱${(order.shipping_discount).toFixed(2)}</p>` : ''}
+                        <p><strong>Total: ₱${(order.total_amount || 0).toFixed(2)}</strong></p>
                     </div>
-                    `).join('') : '<p>No orders yet</p>';
+                    ${order.cancel_refund_reason ? `<p><strong>Reason:</strong> ${order.cancel_refund_reason}</p>` : ''}
+                    <div class="order-actions">
+                        ${markAsPaidBtn}
+                    </div>
+                    </div>
+                        `;
+                    }).join('') : '<p>No orders yet</p>';
                     updateContainer('userOrders', ordersHtml);
                 } catch (error) {
                     console.error('Error updating orders:', error);

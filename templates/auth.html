@@ -31,10 +31,15 @@
             </div>
             <div class="form-group mb-6">
                 <label for="login-password" class="text-gray-700 font-medium">Password</label>
-                <input type="password" id="login-password" name="password" required 
-                       class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500"
-                       autocomplete="current-password"
-                       placeholder="Enter your password">
+                <div style="position:relative;">
+                    <input type="password" id="login-password" name="password" required 
+                        class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500"
+                        autocomplete="current-password"
+                        placeholder="Enter your password">
+                    <button type="button" class="show-password-toggle" data-target="login-password" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
                 <div class="error-message text-red-600 text-sm mt-1" id="password-error"></div>
             </div>
             <button type="submit" class="w-full bg-gray-800 text-white py-3 px-6 rounded-lg hover:bg-gray-900 transition-all duration-300 font-semibold text-lg flex items-center justify-center gap-2 shadow-lg">
@@ -69,11 +74,29 @@
             </div>
             <div class="form-group mb-6">
                 <label for="signup-password" class="text-gray-700 font-medium">Password</label>
-                <input type="password" id="signup-password" name="password" required 
-                       class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                       autocomplete="new-password"
-                       placeholder="Enter your password (min. 6 characters)">
+                <div style="position:relative;">
+                    <input type="password" id="signup-password" name="password" required 
+                        class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        autocomplete="new-password"
+                        placeholder="Enter your password (min. 6 characters)">
+                    <button type="button" class="show-password-toggle" data-target="signup-password" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
                 <div class="error-message text-red-600 text-sm mt-1" id="signup-password-error"></div>
+            </div>
+            <div class="form-group mb-6">
+                <label for="signup-confirm-password" class="text-gray-700 font-medium">Confirm Password</label>
+                <div style="position:relative;">
+                    <input type="password" id="signup-confirm-password" name="confirm_password" required 
+                        class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        autocomplete="new-password"
+                        placeholder="Confirm your password">
+                    <button type="button" class="show-password-toggle" data-target="signup-confirm-password" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+                <div class="error-message text-red-600 text-sm mt-1" id="signup-confirm-password-error"></div>
             </div>
             <button type="submit" class="w-full bg-gray-800 text-white py-3 px-6 rounded-lg hover:bg-gray-900 transition-all duration-300 font-semibold text-lg flex items-center justify-center gap-2 shadow-lg">
                 <i class="fas fa-user-plus"></i>
@@ -103,6 +126,26 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    // Show/hide password toggle (always attach after DOM loaded)
+    function attachShowPasswordToggles() {
+        document.querySelectorAll('.show-password-toggle').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const targetId = this.getAttribute('data-target');
+                const input = document.getElementById(targetId);
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    this.querySelector('i').classList.remove('fa-eye');
+                    this.querySelector('i').classList.add('fa-eye-slash');
+                } else {
+                    input.type = 'password';
+                    this.querySelector('i').classList.remove('fa-eye-slash');
+                    this.querySelector('i').classList.add('fa-eye');
+                }
+            });
+        });
+    }
+    attachShowPasswordToggles();
 
     // Initial button styles
     updateButtonStyles();
@@ -163,18 +206,22 @@ function validateSignupForm() {
     const username = document.getElementById('signup-username');
     const email = document.getElementById('signup-email');
     const password = document.getElementById('signup-password');
+    const confirmPassword = document.getElementById('signup-confirm-password');
     const usernameError = document.getElementById('signup-username-error');
     const emailError = document.getElementById('signup-email-error');
     const passwordError = document.getElementById('signup-password-error');
+    const confirmPasswordError = document.getElementById('signup-confirm-password-error');
     let isValid = true;
 
     // Reset error messages
     usernameError.textContent = '';
     emailError.textContent = '';
     passwordError.textContent = '';
+    confirmPasswordError.textContent = '';
     username.classList.remove('border-red-500');
     email.classList.remove('border-red-500');
     password.classList.remove('border-red-500');
+    confirmPassword.classList.remove('border-red-500');
 
     // Validate username
     if (!username.value.trim()) {
@@ -206,6 +253,17 @@ function validateSignupForm() {
         isValid = false;
     }
 
+    // Validate confirm password
+    if (!confirmPassword.value.trim()) {
+        confirmPasswordError.textContent = 'Please confirm your password';
+        confirmPassword.classList.add('border-red-500');
+        isValid = false;
+    } else if (password.value !== confirmPassword.value) {
+        confirmPasswordError.textContent = 'Passwords do not match';
+        confirmPassword.classList.add('border-red-500');
+        isValid = false;
+    }
+
     return isValid;
 }
 
@@ -216,7 +274,8 @@ document.addEventListener('DOMContentLoaded', function() {
         { input: 'login-password', error: 'password-error' },
         { input: 'signup-username', error: 'signup-username-error' },
         { input: 'signup-email', error: 'signup-email-error' },
-        { input: 'signup-password', error: 'signup-password-error' }
+        { input: 'signup-password', error: 'signup-password-error' },
+        { input: 'signup-confirm-password', error: 'signup-confirm-password-error' }
     ];
 
     inputs.forEach(({ input, error }) => {

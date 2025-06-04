@@ -34,7 +34,7 @@ def forgot_password():
             # In production, send this link via email
             reset_url = url_for('reset_password', token=token, _external=True)
             # For demonstration, show the link in the flash message
-            flash(f'Password reset link (for demo): {reset_url}', 'info')
+            flash(f'Password reset link (for demo): <a href="{reset_url}">{reset_url}</a>', 'info')
         return render_template('reset_password.html', token=None)
 
     return render_template('reset_password.html', token=None)
@@ -156,7 +156,7 @@ class Order(db.Model):
     total_amount = db.Column(db.Float, nullable=False)
     expected_delivery_date = db.Column(db.DateTime)  # New field for expected delivery date
     cancel_refund_reason = db.Column(db.Text)  # New field for cancellation/refund reason
-    
+    received_date = db.Column(db.DateTime)  # Date when order is marked as complete/received
     
     # Shipping Information (copied from user but can be different)
     full_name = db.Column(db.String(100), nullable=False)
@@ -505,12 +505,22 @@ def checkout():
         
         user = User.query.get(session['user_id'])
         subtotal = sum(item.variation.price * item.quantity for item in cart_items)
-        
+        # Shipping logic
+        if subtotal > 3000:
+            shipping_fee = 100
+            shipping_discount = 0
+        else:
+            shipping_fee = 0
+            shipping_discount = 100
+        total = subtotal + shipping_fee - shipping_discount
         return render_template(
             'checkout.html',
             cart_items=cart_items,
             user=user,
-            subtotal=subtotal
+            subtotal=subtotal,
+            shipping_fee=shipping_fee,
+            shipping_discount=shipping_discount,
+            total=total
         )
     
     # Handle POST request
@@ -525,7 +535,13 @@ def checkout():
     
     # Calculate total
     subtotal = sum(item.variation.price * item.quantity for item in cart_items)
-    total = subtotal + 100  # Adding shipping fee
+    if subtotal <= 3000:
+        shipping_fee = 0
+        shipping_discount = 100
+    else:
+        shipping_fee = 100
+        shipping_discount = 0
+    total = subtotal + shipping_fee - shipping_discount
     
     try:
         # Create order
@@ -539,7 +555,9 @@ def checkout():
             address_line2=shipping.get('address_line2', ''),
             city=shipping['city'],
             province=shipping['province'],
-            postal_code=shipping['postal_code']
+            postal_code=shipping['postal_code'],
+            shipping_fee=shipping_fee,
+            expected_delivery_date=datetime.utcnow() + timedelta(days=7)
         )
         db.session.add(order)
         
@@ -567,7 +585,11 @@ def checkout():
         
         return jsonify({
             'success': True,
-            'order_id': order.id
+            'order_id': order.id,
+            'subtotal': subtotal,
+            'shipping_fee': shipping_fee,
+            'shipping_discount': shipping_discount,
+            'total': total
         })
     except Exception as e:
         db.session.rollback()
@@ -670,13 +692,13 @@ def update_order_status(order_id):
     new_status = data.get('status')
     reason = data.get('reason', None)
     
-    valid_statuses = ['cancelled', 'refund', 'complete', 'received']
+    valid_statuses = ['cancelled', 'refund', 'complete', 'received', 'paid']
     if new_status not in valid_statuses:
         return jsonify({'success': False, 'message': 'Invalid status'}), 400
     
     # Business logic: customers can only set 'cancelled', 'refund', 'received'
-    # Admin can set 'complete' as well
-    if not is_admin and new_status == 'complete':
+    # Admin can set 'complete' and 'paid' as well
+    if not is_admin and new_status in ['complete', 'paid']:
         return jsonify({'success': False, 'message': 'Unauthorized status update'}), 403
     
     # If order is being cancelled or refunded, restore stock
@@ -689,6 +711,10 @@ def update_order_status(order_id):
     # Update status and reason
     if new_status == 'received':
         order.status = 'complete'
+        order.received_date = datetime.utcnow()
+    elif new_status == 'paid':
+        order.status = 'paid'
+        order.payment_status = 'completed'
     else:
         order.status = new_status
     

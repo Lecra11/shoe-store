@@ -1,11 +1,37 @@
 {% extends "base.html" %}
 
-{% block title %}Welcome to MyKix{% endblock %}
+{% block title %}Welcome to MyKix<style>
+.scroll-animate {
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.7s cubic-bezier(.4,0,.2,1), transform 0.7s cubic-bezier(.4,0,.2,1);
+}
+.scroll-animate.visible {
+    opacity: 1;
+    transform: none;
+}
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const observer = new IntersectionObserver((entries, obs) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+                obs.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.15 });
+    document.querySelectorAll('.scroll-animate').forEach(el => {
+        observer.observe(el);
+    });
+});
+</script>
+{% endblock %}
 
 {% block content %}
 <div class="hero" style="background-image: url('https://images.pexels.com/photos/1598505/pexels-photo-1598505.jpeg');">
     <div class="hero-content">
-        <h1>Step into Style</h1>
+        <h1>Own Your Steps</h1>
         <p>Discover our collection of premium footwear in the Philippines</p>
         <a href="{{ url_for('products') }}" class="cta-button">Shop Now</a>
     </div>
@@ -16,7 +42,7 @@
         <h2 class="section-title">Featured Products</h2>
         <div class="products-grid">
             {% for product in products %}
-            <div class="product-card">
+            <div class="product-card scroll-animate">
                 <img src="{{ product.variations[0].image_url }}" alt="{{ product.name }}" class="product-image">
                 <div class="product-info">
                     <h3 class="product-name">{{ product.name }}</h3>
@@ -40,17 +66,17 @@
 <section class="features-section">
     <div class="container">
         <div class="features-grid">
-            <div class="feature-card">
+            <div class="feature-card scroll-animate">
                 <i class="fas fa-shipping-fast"></i>
                 <h3>Fast Delivery</h3>
-                <p>Free shipping on orders over ₱3,000</p>
+                <p>Free shipping on orders ₱3,000 and below</p>
             </div>
-            <div class="feature-card">
+            <div class="feature-card scroll-animate">
                 <i class="fas fa-undo"></i>
                 <h3>Easy Returns</h3>
                 <p>30-day return policy</p>
             </div>
-            <div class="feature-card">
+            <div class="feature-card scroll-animate">
                 <i class="fas fa-lock"></i>
                 <h3>Secure Payment</h3>
                 <p>100% secure payment</p>
@@ -64,7 +90,7 @@
     <div class="container">
         <h2 class="section-title">Site Settings</h2>
         <ul class="settings-list" style="list-style: disc; margin-left: 2rem; color: #333;">
-            <li>Free shipping on orders over ₱3,000</li>
+            <li>Free shipping on orders ₱3,000 and below</li>
             <li>30-day return policy</li>
             <li>Secure payment options</li>
             <li>Customer support: 9am - 6pm, Mon-Sat</li>

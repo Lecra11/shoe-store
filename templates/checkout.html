@@ -77,11 +77,17 @@
                 </div>
                 <div class="total-row">
                     <span>Shipping Fee:</span>
-                    <span>₱100.00</span>
+                    <span>{% if shipping_fee == 0 %}<strong>Free Shipping</strong>{% else %}₱{{ "%.2f"|format(shipping_fee) }}{% endif %}</span>
                 </div>
+                {% if shipping_discount %}
+                <div class="total-row">
+                    <span>Shipping Discount:</span>
+                    <span>-₱{{ "%.2f"|format(shipping_discount) }}</span>
+                </div>
+                {% endif %}
                 <div class="total-row grand-total">
                     <span>Total:</span>
-                    <span>₱{{ "%.2f"|format(subtotal + 100) }}</span>
+                    <span>₱{{ "%.2f"|format(total) }}</span>
                 </div>
             </div>
 
